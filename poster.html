@@ -339,6 +339,149 @@
     width: 0%;
   }
 
+  /* Post type toggle */
+  .type-toggle {
+    display: flex;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 4px;
+    gap: 4px;
+    margin-bottom: 20px;
+  }
+
+  .type-toggle button {
+    flex: 1;
+    padding: 8px 16px;
+    border-radius: 7px;
+    border: none;
+    background: transparent;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.82rem;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .type-toggle button.active {
+    background: var(--surface);
+    color: var(--text);
+    border: 1px solid var(--border);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+  }
+
+  /* Album image grid */
+  .album-drop-zone {
+    border: 2px dashed var(--border);
+    border-radius: 12px;
+    padding: 32px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+  }
+
+  .album-drop-zone:hover, .album-drop-zone.dragover {
+    border-color: var(--accent2);
+    background: rgba(124,58,237,0.04);
+  }
+
+  .album-drop-zone input[type="file"] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+    width: 100%;
+    height: 100%;
+  }
+
+  .album-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+    gap: 10px;
+    margin-top: 16px;
+  }
+
+  .album-thumb {
+    position: relative;
+    aspect-ratio: 1;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 2px solid var(--border);
+    background: var(--surface2);
+    cursor: grab;
+    transition: border-color 0.2s, transform 0.15s;
+    user-select: none;
+  }
+
+  .album-thumb:active { cursor: grabbing; transform: scale(0.97); }
+  .album-thumb.cover { border-color: var(--accent2); }
+  .album-thumb.dragging-over { border-color: var(--accent); border-style: dashed; }
+
+  .album-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    pointer-events: none;
+  }
+
+  .album-thumb-remove {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: rgba(0,0,0,0.7);
+    border: none;
+    color: white;
+    font-size: 11px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+
+  .album-thumb:hover .album-thumb-remove { opacity: 1; }
+
+  .album-thumb-cover-badge {
+    position: absolute;
+    bottom: 4px;
+    left: 4px;
+    background: var(--accent2);
+    color: white;
+    font-size: 9px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: 'DM Mono', monospace;
+    letter-spacing: 0.04em;
+    pointer-events: none;
+  }
+
+  .album-thumb-num {
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    background: rgba(0,0,0,0.5);
+    color: white;
+    font-size: 9px;
+    padding: 2px 5px;
+    border-radius: 4px;
+    font-family: 'DM Mono', monospace;
+    pointer-events: none;
+  }
+
+  .album-hint {
+    font-size: 0.72rem;
+    color: var(--muted);
+    margin-top: 10px;
+    line-height: 1.5;
+  }
+
   /* Sandbox notice */
   .notice {
     background: rgba(245,158,11,0.08);
@@ -444,13 +587,34 @@
     <div class="card">
       <div class="card-title">New Post</div>
 
-      <div class="drop-zone" id="drop-zone">
-        <input type="file" id="video-input" accept="video/mp4,video/mov,video/webm" onchange="handleFile(this.files[0])">
-        <span class="drop-icon">🎬</span>
-        <p><strong>Drop your video here</strong><br>MP4, MOV, WEBM — up to 4GB</p>
+      <!-- Post type toggle -->
+      <div class="type-toggle">
+        <button id="toggle-video" class="active" onclick="switchPostType('video')">🎬 Video</button>
+        <button id="toggle-album" onclick="switchPostType('album')">🖼 Photo Album</button>
       </div>
 
-      <div id="file-info" style="display:none; margin-top:12px; padding:12px; background:var(--surface2); border-radius:8px; font-size:0.8rem; color:var(--muted);"></div>
+      <!-- Video upload -->
+      <div id="video-panel">
+        <div class="drop-zone" id="drop-zone">
+          <input type="file" id="video-input" accept="video/mp4,video/mov,video/webm" onchange="handleFile(this.files[0])">
+          <span class="drop-icon">🎬</span>
+          <p><strong>Drop your video here</strong><br>MP4, MOV, WEBM — up to 4GB</p>
+        </div>
+        <div id="file-info" style="display:none; margin-top:12px; padding:12px; background:var(--surface2); border-radius:8px; font-size:0.8rem; color:var(--muted);"></div>
+      </div>
+
+      <!-- Album upload -->
+      <div id="album-panel" style="display:none;">
+        <div class="album-drop-zone" id="album-drop-zone">
+          <input type="file" id="album-input" accept="image/jpeg,image/png,image/webp" multiple onchange="handleAlbumFiles(this.files)">
+          <span class="drop-icon">🖼</span>
+          <p><strong>Drop your images here</strong><br>JPEG, PNG, WEBP — up to 35 photos</p>
+        </div>
+        <div id="album-grid" class="album-grid"></div>
+        <p class="album-hint" id="album-hint" style="display:none;">
+          Drag to reorder · Click cover badge to change cover · First image is cover by default
+        </p>
+      </div>
 
       <div style="margin-top:20px;">
         <div class="field">
@@ -472,7 +636,7 @@
           </div>
         </div>
 
-        <div class="row" style="margin-top:4px;">
+        <div class="row" id="video-only-controls" style="margin-top:4px;">
           <label style="display:flex; align-items:center; gap:8px; cursor:pointer; text-transform:none; letter-spacing:0;">
             <input type="checkbox" id="disable-duet"> Disable Duet
           </label>
@@ -488,7 +652,7 @@
       <div class="actions">
         <div class="spacer"></div>
         <button class="btn btn-secondary" onclick="addToQueue()">+ Add to Queue</button>
-        <button class="btn btn-primary" onclick="postNow()">Post Now →</button>
+        <button class="btn btn-primary" id="post-now-btn" onclick="postNow()">Post Now →</button>
       </div>
     </div>
 
@@ -523,6 +687,10 @@ let accessToken = localStorage.getItem('tt_access_token');
 let userInfo = JSON.parse(localStorage.getItem('tt_user') || 'null');
 let queue = JSON.parse(localStorage.getItem('tt_queue') || '[]');
 let selectedFile = null;
+let postType = 'video'; // 'video' | 'album'
+let albumFiles = []; // { file: File, objectUrl: string }[]
+let albumCoverIndex = 0;
+let albumDragSrcIdx = null;
 
 // ── INIT ─────────────────────────────────────────────────────────────────
 window.addEventListener('load', async () => {
@@ -632,6 +800,16 @@ function setStatus(text, connected) {
   dot.className = 'dot' + (connected ? ' sandbox' : '');
 }
 
+// ── POST TYPE TOGGLE ──────────────────────────────────────────────────────
+function switchPostType(type) {
+  postType = type;
+  document.getElementById('toggle-video').classList.toggle('active', type === 'video');
+  document.getElementById('toggle-album').classList.toggle('active', type === 'album');
+  document.getElementById('video-panel').style.display = type === 'video' ? 'block' : 'none';
+  document.getElementById('album-panel').style.display = type === 'album' ? 'block' : 'none';
+  document.getElementById('video-only-controls').style.display = type === 'video' ? 'grid' : 'none';
+}
+
 // ── FILE HANDLING ─────────────────────────────────────────────────────────
 function setupDropZone() {
   const zone = document.getElementById('drop-zone');
@@ -642,6 +820,15 @@ function setupDropZone() {
     zone.classList.remove('dragover');
     const file = e.dataTransfer.files[0];
     if (file) handleFile(file);
+  });
+
+  const albumZone = document.getElementById('album-drop-zone');
+  albumZone.addEventListener('dragover', e => { e.preventDefault(); albumZone.classList.add('dragover'); });
+  albumZone.addEventListener('dragleave', () => albumZone.classList.remove('dragover'));
+  albumZone.addEventListener('drop', e => {
+    e.preventDefault();
+    albumZone.classList.remove('dragover');
+    handleAlbumFiles(e.dataTransfer.files);
   });
 }
 
@@ -658,6 +845,96 @@ function handleFile(file) {
   info.innerHTML = `🎬 <strong>${file.name}</strong> — ${(file.size / 1024 / 1024).toFixed(1)} MB`;
 }
 
+// ── ALBUM FILE HANDLING ───────────────────────────────────────────────────
+function handleAlbumFiles(files) {
+  const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
+  const incoming = Array.from(files).filter(f => validTypes.includes(f.type));
+  if (incoming.length === 0) { showToast('Please select JPEG, PNG, or WEBP images.', 'error'); return; }
+
+  const remaining = 35 - albumFiles.length;
+  if (remaining <= 0) { showToast('Maximum 35 images per album.', 'error'); return; }
+
+  const toAdd = incoming.slice(0, remaining);
+  if (incoming.length > remaining) showToast(`Only ${remaining} slot(s) left — added first ${remaining}.`, 'error');
+
+  toAdd.forEach(file => {
+    albumFiles.push({ file, objectUrl: URL.createObjectURL(file) });
+  });
+  renderAlbumGrid();
+}
+
+function removeAlbumImage(idx) {
+  URL.revokeObjectURL(albumFiles[idx].objectUrl);
+  albumFiles.splice(idx, 1);
+  if (albumCoverIndex >= albumFiles.length) albumCoverIndex = Math.max(0, albumFiles.length - 1);
+  renderAlbumGrid();
+}
+
+function setCover(idx) {
+  albumCoverIndex = idx;
+  renderAlbumGrid();
+}
+
+function renderAlbumGrid() {
+  const grid = document.getElementById('album-grid');
+  const hint = document.getElementById('album-hint');
+
+  if (albumFiles.length === 0) {
+    grid.innerHTML = '';
+    hint.style.display = 'none';
+    return;
+  }
+
+  hint.style.display = 'block';
+  grid.innerHTML = albumFiles.map((entry, i) => `
+    <div class="album-thumb${i === albumCoverIndex ? ' cover' : ''}"
+         draggable="true"
+         ondragstart="albumDragStart(event, ${i})"
+         ondragover="albumDragOver(event, ${i})"
+         ondragleave="albumDragLeave(event)"
+         ondrop="albumDrop(event, ${i})"
+         ondragend="albumDragEnd()"
+         onclick="setCover(${i})"
+         title="Click to set as cover">
+      <img src="${entry.objectUrl}" alt="Photo ${i + 1}">
+      <span class="album-thumb-num">${i + 1}</span>
+      ${i === albumCoverIndex ? '<span class="album-thumb-cover-badge">cover</span>' : ''}
+      <button class="album-thumb-remove" onclick="event.stopPropagation(); removeAlbumImage(${i})" title="Remove">✕</button>
+    </div>
+  `).join('');
+}
+
+// Drag-to-reorder for album grid
+function albumDragStart(e, idx) {
+  albumDragSrcIdx = idx;
+  e.dataTransfer.effectAllowed = 'move';
+}
+function albumDragOver(e, idx) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  document.querySelectorAll('.album-thumb').forEach((el, i) => {
+    el.classList.toggle('dragging-over', i === idx && i !== albumDragSrcIdx);
+  });
+}
+function albumDragLeave(e) {
+  e.currentTarget.classList.remove('dragging-over');
+}
+function albumDrop(e, idx) {
+  e.preventDefault();
+  if (albumDragSrcIdx === null || albumDragSrcIdx === idx) return;
+  const wasCover = albumDragSrcIdx === albumCoverIndex;
+  const moved = albumFiles.splice(albumDragSrcIdx, 1)[0];
+  albumFiles.splice(idx, 0, moved);
+  if (wasCover) albumCoverIndex = idx;
+  else if (albumCoverIndex === idx) albumCoverIndex = albumDragSrcIdx < idx ? idx - 1 : idx + 1;
+  albumDragSrcIdx = null;
+  renderAlbumGrid();
+}
+function albumDragEnd() {
+  albumDragSrcIdx = null;
+  document.querySelectorAll('.album-thumb').forEach(el => el.classList.remove('dragging-over'));
+}
+
 // ── CAPTION ───────────────────────────────────────────────────────────────
 function updateCharCount() {
   const len = document.getElementById('caption').value.length;
@@ -669,6 +946,7 @@ function updateCharCount() {
 // ── QUEUE ─────────────────────────────────────────────────────────────────
 function getFormData() {
   return {
+    postType,
     caption: document.getElementById('caption').value,
     privacy: document.getElementById('privacy').value,
     scheduleTime: document.getElementById('schedule-time').value,
@@ -679,17 +957,42 @@ function getFormData() {
 }
 
 function addToQueue() {
-  if (!selectedFile) { showToast('Please select a video file first.', 'error'); return; }
   const data = getFormData();
+
+  if (postType === 'album') {
+    if (albumFiles.length < 2) { showToast('Please add at least 2 images for an album.', 'error'); return; }
+    const item = {
+      id: Date.now(),
+      postType: 'album',
+      fileName: `Album (${albumFiles.length} photos)`,
+      imageCount: albumFiles.length,
+      coverIndex: albumCoverIndex,
+      ...data,
+      status: 'queued',
+      addedAt: new Date().toISOString(),
+    };
+    window._fileMap = window._fileMap || {};
+    window._fileMap[item.id] = albumFiles.map(e => e.file); // array of Files
+    window._coverMap = window._coverMap || {};
+    window._coverMap[item.id] = albumCoverIndex;
+    queue.push(item);
+    saveQueue();
+    renderQueue();
+    resetForm();
+    showToast(`Added album of ${albumFiles.length} photos to queue.`, 'success');
+    return;
+  }
+
+  if (!selectedFile) { showToast('Please select a video file first.', 'error'); return; }
   const item = {
     id: Date.now(),
+    postType: 'video',
     fileName: selectedFile.name,
     fileSize: selectedFile.size,
     ...data,
     status: 'queued',
     addedAt: new Date().toISOString(),
   };
-  // Store file reference separately (can't serialize File objects)
   window._fileMap = window._fileMap || {};
   window._fileMap[item.id] = selectedFile;
 
@@ -729,11 +1032,13 @@ function renderQueue() {
 
   list.innerHTML = queue.map(item => `
     <div class="queue-item" id="qi-${item.id}">
-      <div class="queue-thumb">🎬</div>
+      <div class="queue-thumb">${item.postType === 'album' ? '🖼' : '🎬'}</div>
       <div class="queue-info">
         <div class="queue-title">${item.fileName}</div>
         <div class="queue-meta">
-          ${(item.fileSize / 1024 / 1024).toFixed(1)}MB
+          ${item.postType === 'album'
+            ? `${item.imageCount} photo${item.imageCount !== 1 ? 's' : ''}`
+            : `${(item.fileSize / 1024 / 1024).toFixed(1)}MB`}
           · ${item.privacy.replace('_', ' ').toLowerCase()}
           ${item.scheduleTime ? '· ⏰ ' + new Date(item.scheduleTime).toLocaleString() : ''}
           ${item.caption ? '· ' + item.caption.slice(0, 40) + (item.caption.length > 40 ? '…' : '') : ''}
@@ -750,6 +1055,13 @@ function resetForm() {
   selectedFile = null;
   document.getElementById('video-input').value = '';
   document.getElementById('file-info').style.display = 'none';
+  // Clear album
+  albumFiles.forEach(e => URL.revokeObjectURL(e.objectUrl));
+  albumFiles = [];
+  albumCoverIndex = 0;
+  document.getElementById('album-input').value = '';
+  renderAlbumGrid();
+  // Clear shared fields
   document.getElementById('caption').value = '';
   document.getElementById('schedule-time').value = '';
   document.getElementById('disable-duet').checked = false;
@@ -760,9 +1072,17 @@ function resetForm() {
 
 // ── POSTING ────────────────────────────────────────────────────────────────
 async function postNow() {
-  if (!selectedFile) { showToast('Please select a video file first.', 'error'); return; }
   if (!accessToken) { showToast('Not connected to TikTok.', 'error'); return; }
   const data = getFormData();
+
+  if (postType === 'album') {
+    if (albumFiles.length < 2) { showToast('Please add at least 2 images for an album.', 'error'); return; }
+    await uploadAlbum(albumFiles.map(e => e.file), albumCoverIndex, data);
+    resetForm();
+    return;
+  }
+
+  if (!selectedFile) { showToast('Please select a video file first.', 'error'); return; }
   await uploadVideo(selectedFile, data);
   resetForm();
 }
@@ -771,13 +1091,97 @@ async function postQueue() {
   if (!accessToken) { showToast('Not connected to TikTok.', 'error'); return; }
   const pending = queue.filter(i => i.status === 'queued');
   for (const item of pending) {
-    const file = window._fileMap?.[item.id];
-    if (!file) {
+    const files = window._fileMap?.[item.id];
+    if (!files) {
       updateQueueStatus(item.id, 'failed');
-      showToast(`File missing for "${item.fileName}" — please re-add it.`, 'error');
+      showToast(`Files missing for "${item.fileName}" — please re-add it.`, 'error');
       continue;
     }
-    await uploadVideo(file, item, item.id);
+    if (item.postType === 'album') {
+      const coverIdx = window._coverMap?.[item.id] ?? 0;
+      await uploadAlbum(files, coverIdx, item, item.id);
+    } else {
+      await uploadVideo(files, item, item.id);
+    }
+  }
+}
+
+async function uploadAlbum(files, coverIndex, data, queueId = null) {
+  if (queueId) updateQueueStatus(queueId, 'uploading');
+  const label = `Album (${files.length} photos)`;
+
+  try {
+    showToast(`Initializing album upload…`, 'success');
+
+    // Step 1: Init album via worker
+    const initResp = await fetch(`${WORKER_URL}/album_init`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        access_token: accessToken,
+        caption: data.caption || ' ',
+        privacy: data.privacy,
+        disable_comment: data.disableComment,
+        photo_count: files.length,
+        cover_index: coverIndex,
+      })
+    });
+
+    const initData = await initResp.json();
+    if (initData.error) throw new Error(initData.description || initData.error);
+
+    const { publish_id, photo_upload_urls } = initData;
+
+    if (!photo_upload_urls || photo_upload_urls.length !== files.length) {
+      throw new Error('TikTok returned wrong number of upload URLs');
+    }
+
+    // Step 2: Upload each image to its dedicated URL
+    for (let i = 0; i < files.length; i++) {
+      showToast(`Uploading photo ${i + 1} of ${files.length}…`, 'success');
+      if (queueId) setProgress(queueId, Math.round((i / files.length) * 60));
+
+      const uploadResp = await fetch(photo_upload_urls[i], {
+        method: 'PUT',
+        headers: { 'Content-Type': files[i].type || 'image/jpeg' },
+        body: files[i],
+      });
+
+      if (!uploadResp.ok) throw new Error(`Photo ${i + 1} upload failed: ${uploadResp.status}`);
+    }
+
+    if (queueId) setProgress(queueId, 65);
+
+    // Step 3: Poll for publish status
+    showToast(`Processing album…`, 'success');
+    let posted = false;
+    for (let i = 0; i < 20; i++) {
+      await sleep(3000);
+      const statusResp = await fetch(`${WORKER_URL}/status`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ access_token: accessToken, publish_id })
+      });
+      const statusData = await statusResp.json();
+      if (statusData.error) throw new Error(statusData.description || statusData.error);
+      const status = statusData.status;
+
+      if (status === 'PUBLISH_COMPLETE') { posted = true; break; }
+      else if (status === 'FAILED') throw new Error('TikTok reported album publish failed');
+      if (queueId) setProgress(queueId, 65 + i * 1.7);
+    }
+
+    if (posted) {
+      if (queueId) { setProgress(queueId, 100); updateQueueStatus(queueId, 'posted'); }
+      showToast(`✅ ${label} posted successfully!`, 'success');
+    } else {
+      throw new Error('Timed out waiting for TikTok to process the album');
+    }
+
+  } catch (err) {
+    console.error(err);
+    if (queueId) updateQueueStatus(queueId, 'failed');
+    showToast(`❌ ${err.message}`, 'error');
   }
 }
 
