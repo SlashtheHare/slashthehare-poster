@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SlashtheHare Poster</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Mono:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #13131a;
+    --surface2: #1c1c27;
+    --border: #2a2a3a;
+    --accent: #ff3c6e;
+    --accent2: #7c3aed;
+    --text: #e8e8f0;
+    --muted: #6b6b88;
+    --success: #22c55e;
+    --warning: #f59e0b;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Background grid */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(124,58,237,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(124,58,237,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .app { position: relative; z-index: 1; max-width: 860px; margin: 0 auto; padding: 40px 24px; }
+
+  /* Header */
+  header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    margin-bottom: 48px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .logo {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 1.6rem;
+    letter-spacing: -0.03em;
+  }
+
+  .logo span { color: var(--accent); }
+
+  .status-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.75rem;
+    color: var(--muted);
+  }
+
+  .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--muted);
+    transition: background 0.3s;
+  }
+  .dot.connected { background: var(--success); box-shadow: 0 0 8px var(--success); }
+  .dot.sandbox { background: var(--warning); box-shadow: 0 0 8px var(--warning); }
+
+  /* Auth section */
+  #auth-section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 48px;
+    text-align: center;
+    margin-bottom: 32px;
+  }
+
+  #auth-section h2 {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.4rem;
+    font-weight: 700;
+    margin-bottom: 12px;
+  }
+
+  #auth-section p {
+    color: var(--muted);
+    font-size: 0.85rem;
+    margin-bottom: 32px;
+    line-height: 1.6;
+  }
+
+  /* Buttons */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.85rem;
+    font-weight: 500;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-decoration: none;
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: white;
+  }
+  .btn-primary:hover { background: #ff5a83; transform: translateY(-1px); box-shadow: 0 4px 20px rgba(255,60,110,0.4); }
+
+  .btn-secondary {
+    background: var(--surface2);
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+  .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--muted);
+    border: 1px solid var(--border);
+  }
+  .btn-ghost:hover { color: var(--text); border-color: var(--muted); }
+
+  .btn-danger {
+    background: transparent;
+    color: #ef4444;
+    border: 1px solid #ef444440;
+    font-size: 0.75rem;
+    padding: 6px 12px;
+  }
+  .btn-danger:hover { background: #ef444420; }
+
+  /* Main UI */
+  #main-section { display: none; }
+
+  .user-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 6px 16px 6px 8px;
+    font-size: 0.8rem;
+    margin-bottom: 32px;
+  }
+
+  .user-pill img {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1px solid var(--border);
+  }
+
+  .user-pill .name { color: var(--text); }
+  .user-pill .handle { color: var(--muted); }
+
+  /* Upload area */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px;
+    margin-bottom: 20px;
+  }
+
+  .card-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    margin-bottom: 20px;
+  }
+
+  .drop-zone {
+    border: 2px dashed var(--border);
+    border-radius: 12px;
+    padding: 40px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+  }
+
+  .drop-zone:hover, .drop-zone.dragover {
+    border-color: var(--accent);
+    background: rgba(255,60,110,0.04);
+  }
+
+  .drop-zone input[type="file"] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+    width: 100%;
+    height: 100%;
+  }
+
+  .drop-icon {
+    font-size: 2rem;
+    margin-bottom: 12px;
+    display: block;
+  }
+
+  .drop-zone p { color: var(--muted); font-size: 0.85rem; line-height: 1.6; }
+  .drop-zone strong { color: var(--text); }
+
+  /* Form fields */
+  .field { margin-bottom: 16px; }
+
+  label {
+    display: block;
+    font-size: 0.75rem;
+    color: var(--muted);
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  input[type="text"], textarea, select {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.85rem;
+    outline: none;
+    transition: border-color 0.2s;
+    resize: vertical;
+  }
+
+  input[type="text"]:focus, textarea:focus, select:focus {
+    border-color: var(--accent2);
+  }
+
+  select option { background: var(--surface2); }
+
+  .char-count {
+    text-align: right;
+    font-size: 0.7rem;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+
+  .char-count.warn { color: var(--warning); }
+  .char-count.over { color: var(--accent); }
+
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+  /* Queue */
+  .queue-empty {
+    text-align: center;
+    padding: 40px;
+    color: var(--muted);
+    font-size: 0.85rem;
+  }
+
+  .queue-item {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin-bottom: 10px;
+    animation: slideIn 0.3s ease;
+  }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(-8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .queue-thumb {
+    width: 48px; height: 48px;
+    background: var(--border);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    flex-shrink: 0;
+  }
+
+  .queue-info { flex: 1; min-width: 0; }
+  .queue-title { font-size: 0.85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 4px; }
+  .queue-meta { font-size: 0.72rem; color: var(--muted); }
+
+  .queue-status {
+    font-size: 0.72rem;
+    padding: 3px 10px;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+  .status-queued { background: rgba(107,107,136,0.2); color: var(--muted); }
+  .status-uploading { background: rgba(124,58,237,0.2); color: #a78bfa; }
+  .status-posted { background: rgba(34,197,94,0.2); color: var(--success); }
+  .status-failed { background: rgba(239,68,68,0.2); color: #ef4444; }
+
+  /* Progress bar */
+  .progress-bar {
+    height: 2px;
+    background: var(--border);
+    border-radius: 2px;
+    margin-top: 6px;
+    overflow: hidden;
+    display: none;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent2), var(--accent));
+    border-radius: 2px;
+    transition: width 0.3s;
+    width: 0%;
+  }
+
+  /* Sandbox notice */
+  .notice {
+    background: rgba(245,158,11,0.08);
+    border: 1px solid rgba(245,158,11,0.3);
+    border-radius: 10px;
+    padding: 14px 18px;
+    font-size: 0.78rem;
+    color: var(--warning);
+    margin-bottom: 20px;
+    line-height: 1.6;
+  }
+
+  .notice strong { font-weight: 500; }
+
+  /* Footer actions */
+  .actions {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    margin-top: 20px;
+  }
+
+  .actions .spacer { flex: 1; }
+
+  /* Toasts */
+  #toast-container {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .toast {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 18px;
+    font-size: 0.8rem;
+    min-width: 260px;
+    animation: toastIn 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .toast.success { border-color: rgba(34,197,94,0.4); }
+  .toast.error { border-color: rgba(239,68,68,0.4); }
+
+  @keyframes toastIn {
+    from { opacity: 0; transform: translateX(20px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  /* Responsive */
+  @media (max-width: 600px) {
+    .row { grid-template-columns: 1fr; }
+    header { flex-direction: column; align-items: flex-start; gap: 12px; }
+    #auth-section { padding: 28px 20px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <header>
+    <div class="logo">slash<span>poster</span></div>
+    <div class="status-bar">
+      <div class="dot" id="status-dot"></div>
+      <span id="status-text">not connected</span>
+    </div>
+  </header>
+
+  <!-- Auth screen -->
+  <div id="auth-section">
+    <h2>Connect your TikTok</h2>
+    <p>Authorize this app to post videos to your account.<br>You'll be redirected to TikTok to log in.</p>
+    <button class="btn btn-primary" onclick="startAuth()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.18 8.18 0 0 0 4.78 1.52V6.76a4.85 4.85 0 0 1-1.01-.07z"/></svg>
+      Connect TikTok
+    </button>
+  </div>
+
+  <!-- Main UI -->
+  <div id="main-section">
+
+    <div class="notice">
+      <strong>⚠ Sandbox mode:</strong> Until your app is approved by TikTok, all posts will be <strong>private</strong> and only visible to you. Everything else works normally.
+    </div>
+
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:24px;">
+      <div class="user-pill" id="user-pill">
+        <img id="user-avatar" src="" alt="">
+        <span class="name" id="user-name">—</span>
+        <span class="handle" id="user-handle"></span>
+      </div>
+      <button class="btn btn-ghost" onclick="disconnect()" style="font-size:0.75rem; padding:6px 14px;">disconnect</button>
+    </div>
+
+    <!-- Upload form -->
+    <div class="card">
+      <div class="card-title">New Post</div>
+
+      <div class="drop-zone" id="drop-zone">
+        <input type="file" id="video-input" accept="video/mp4,video/mov,video/webm" onchange="handleFile(this.files[0])">
+        <span class="drop-icon">🎬</span>
+        <p><strong>Drop your video here</strong><br>MP4, MOV, WEBM — up to 4GB</p>
+      </div>
+
+      <div id="file-info" style="display:none; margin-top:12px; padding:12px; background:var(--surface2); border-radius:8px; font-size:0.8rem; color:var(--muted);"></div>
+
+      <div style="margin-top:20px;">
+        <div class="field">
+          <label>Caption</label>
+          <textarea id="caption" rows="3" maxlength="2200" placeholder="Write your caption... #hashtags go here" oninput="updateCharCount()"></textarea>
+          <div class="char-count" id="char-count">0 / 2200</div>
+        </div>
+
+        <div class="row">
+          <div class="field">
+            <label>Privacy</label>
+            <select id="privacy">
+              <option value="PUBLIC_TO_EVERYONE">Public</option>
+              <option value="MUTUAL_FOLLOW_FRIENDS">Friends</option>
+              <option value="SELF_ONLY">Private</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Schedule (optional)</label>
+            <input type="datetime-local" id="schedule-time" style="width:100%; background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:10px 14px; color:var(--text); font-family:'DM Mono',monospace; font-size:0.85rem; outline:none;">
+          </div>
+        </div>
+
+        <div class="row" style="margin-top:4px;">
+          <label style="display:flex; align-items:center; gap:8px; cursor:pointer; text-transform:none; letter-spacing:0;">
+            <input type="checkbox" id="disable-duet"> Disable Duet
+          </label>
+          <label style="display:flex; align-items:center; gap:8px; cursor:pointer; text-transform:none; letter-spacing:0;">
+            <input type="checkbox" id="disable-stitch"> Disable Stitch
+          </label>
+          <label style="display:flex; align-items:center; gap:8px; cursor:pointer; text-transform:none; letter-spacing:0;">
+            <input type="checkbox" id="disable-comment"> Disable Comments
+          </label>
+        </div>
+      </div>
+
+      <div class="actions">
+        <div class="spacer"></div>
+        <button class="btn btn-secondary" onclick="addToQueue()">+ Add to Queue</button>
+        <button class="btn btn-primary" onclick="postNow()">Post Now →</button>
+      </div>
+    </div>
+
+    <!-- Queue -->
+    <div class="card">
+      <div class="card-title" style="display:flex; align-items:center; justify-content:space-between;">
+        <span>Queue</span>
+        <span id="queue-count" style="color:var(--accent); font-size:0.8rem;"></span>
+      </div>
+      <div id="queue-list">
+        <div class="queue-empty">No videos queued yet.</div>
+      </div>
+      <div id="post-queue-actions" style="display:none; margin-top:16px;">
+        <button class="btn btn-primary" onclick="postQueue()" style="width:100%;">Post All Queued →</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div id="toast-container"></div>
+
+<script>
+// ── CONFIG ──────────────────────────────────────────────────────────────
+const CLIENT_KEY = 'aworrq4up714anek';
+const REDIRECT_URI = 'https://slashthehare.github.io/slashthehare-poster/callback.html';
+const SCOPES = 'user.info.basic,video.upload,video.publish';
+
+// ── STATE ────────────────────────────────────────────────────────────────
+let accessToken = localStorage.getItem('tt_access_token');
+let userInfo = JSON.parse(localStorage.getItem('tt_user') || 'null');
+let queue = JSON.parse(localStorage.getItem('tt_queue') || '[]');
+let selectedFile = null;
+
+// ── INIT ─────────────────────────────────────────────────────────────────
+window.addEventListener('load', () => {
+  // Check for OAuth callback params in URL
+  const params = new URLSearchParams(window.location.search);
+  const code = params.get('code');
+  if (code) {
+    // Clean URL
+    window.history.replaceState({}, '', window.location.pathname);
+    showToast('⚠ OAuth code received — server-side exchange needed. See console.', 'error');
+    console.log('Auth code:', code);
+    console.log('Exchange this code server-side for an access_token using your Client Secret.');
+  }
+
+  if (accessToken) {
+    showMain();
+  } else {
+    document.getElementById('auth-section').style.display = 'block';
+    document.getElementById('main-section').style.display = 'none';
+  }
+
+  setupDropZone();
+  renderQueue();
+});
+
+// ── AUTH ─────────────────────────────────────────────────────────────────
+function startAuth() {
+  const state = Math.random().toString(36).slice(2);
+  sessionStorage.setItem('oauth_state', state);
+  const url = `https://www.tiktok.com/v2/auth/authorize/?client_key=${CLIENT_KEY}&scope=${SCOPES}&response_type=code&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&state=${state}`;
+  window.location.href = url;
+}
+
+function disconnect() {
+  localStorage.removeItem('tt_access_token');
+  localStorage.removeItem('tt_user');
+  accessToken = null;
+  userInfo = null;
+  document.getElementById('auth-section').style.display = 'block';
+  document.getElementById('main-section').style.display = 'none';
+  setStatus('not connected', false);
+}
+
+// Call this after you have the access token (from callback page)
+function showMain() {
+  document.getElementById('auth-section').style.display = 'none';
+  document.getElementById('main-section').style.display = 'block';
+  setStatus('connected (sandbox)', true);
+
+  if (userInfo) {
+    document.getElementById('user-name').textContent = userInfo.display_name || 'TikTok User';
+    document.getElementById('user-handle').textContent = userInfo.username ? `@${userInfo.username}` : '';
+    if (userInfo.avatar_url) document.getElementById('user-avatar').src = userInfo.avatar_url;
+  }
+}
+
+function setStatus(text, connected) {
+  document.getElementById('status-text').textContent = text;
+  const dot = document.getElementById('status-dot');
+  dot.className = 'dot' + (connected ? ' sandbox' : '');
+}
+
+// ── FILE HANDLING ─────────────────────────────────────────────────────────
+function setupDropZone() {
+  const zone = document.getElementById('drop-zone');
+  zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('dragover'); });
+  zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+  zone.addEventListener('drop', e => {
+    e.preventDefault();
+    zone.classList.remove('dragover');
+    const file = e.dataTransfer.files[0];
+    if (file) handleFile(file);
+  });
+}
+
+function handleFile(file) {
+  if (!file) return;
+  const validTypes = ['video/mp4', 'video/quicktime', 'video/webm'];
+  if (!validTypes.includes(file.type)) {
+    showToast('Please select an MP4, MOV, or WEBM file.', 'error');
+    return;
+  }
+  selectedFile = file;
+  const info = document.getElementById('file-info');
+  info.style.display = 'block';
+  info.innerHTML = `🎬 <strong>${file.name}</strong> — ${(file.size / 1024 / 1024).toFixed(1)} MB`;
+}
+
+// ── CAPTION ───────────────────────────────────────────────────────────────
+function updateCharCount() {
+  const len = document.getElementById('caption').value.length;
+  const el = document.getElementById('char-count');
+  el.textContent = `${len} / 2200`;
+  el.className = 'char-count' + (len > 2000 ? (len > 2200 ? ' over' : ' warn') : '');
+}
+
+// ── QUEUE ─────────────────────────────────────────────────────────────────
+function getFormData() {
+  return {
+    caption: document.getElementById('caption').value,
+    privacy: document.getElementById('privacy').value,
+    scheduleTime: document.getElementById('schedule-time').value,
+    disableDuet: document.getElementById('disable-duet').checked,
+    disableStitch: document.getElementById('disable-stitch').checked,
+    disableComment: document.getElementById('disable-comment').checked,
+  };
+}
+
+function addToQueue() {
+  if (!selectedFile) { showToast('Please select a video file first.', 'error'); return; }
+  const data = getFormData();
+  const item = {
+    id: Date.now(),
+    fileName: selectedFile.name,
+    fileSize: selectedFile.size,
+    ...data,
+    status: 'queued',
+    addedAt: new Date().toISOString(),
+  };
+  // Store file reference separately (can't serialize File objects)
+  window._fileMap = window._fileMap || {};
+  window._fileMap[item.id] = selectedFile;
+
+  queue.push(item);
+  saveQueue();
+  renderQueue();
+  resetForm();
+  showToast(`Added "${selectedFile.name}" to queue.`, 'success');
+}
+
+function removeFromQueue(id) {
+  queue = queue.filter(i => i.id !== id);
+  saveQueue();
+  renderQueue();
+}
+
+function saveQueue() {
+  // Save metadata only (no File objects)
+  const saveable = queue.map(({...item}) => item);
+  localStorage.setItem('tt_queue', JSON.stringify(saveable));
+}
+
+function renderQueue() {
+  const list = document.getElementById('queue-list');
+  const count = document.getElementById('queue-count');
+  const actions = document.getElementById('post-queue-actions');
+
+  if (queue.length === 0) {
+    list.innerHTML = '<div class="queue-empty">No videos queued yet.</div>';
+    count.textContent = '';
+    actions.style.display = 'none';
+    return;
+  }
+
+  count.textContent = `${queue.length} video${queue.length > 1 ? 's' : ''}`;
+  actions.style.display = queue.some(i => i.status === 'queued') ? 'block' : 'none';
+
+  list.innerHTML = queue.map(item => `
+    <div class="queue-item" id="qi-${item.id}">
+      <div class="queue-thumb">🎬</div>
+      <div class="queue-info">
+        <div class="queue-title">${item.fileName}</div>
+        <div class="queue-meta">
+          ${(item.fileSize / 1024 / 1024).toFixed(1)}MB
+          · ${item.privacy.replace('_', ' ').toLowerCase()}
+          ${item.scheduleTime ? '· ⏰ ' + new Date(item.scheduleTime).toLocaleString() : ''}
+          ${item.caption ? '· ' + item.caption.slice(0, 40) + (item.caption.length > 40 ? '…' : '') : ''}
+        </div>
+        <div class="progress-bar" id="pb-${item.id}"><div class="progress-fill" id="pf-${item.id}"></div></div>
+      </div>
+      <span class="queue-status status-${item.status}">${item.status}</span>
+      ${item.status === 'queued' ? `<button class="btn btn-danger" onclick="removeFromQueue(${item.id})">✕</button>` : ''}
+    </div>
+  `).join('');
+}
+
+function resetForm() {
+  selectedFile = null;
+  document.getElementById('video-input').value = '';
+  document.getElementById('file-info').style.display = 'none';
+  document.getElementById('caption').value = '';
+  document.getElementById('schedule-time').value = '';
+  document.getElementById('disable-duet').checked = false;
+  document.getElementById('disable-stitch').checked = false;
+  document.getElementById('disable-comment').checked = false;
+  updateCharCount();
+}
+
+// ── POSTING ────────────────────────────────────────────────────────────────
+async function postNow() {
+  if (!selectedFile) { showToast('Please select a video file first.', 'error'); return; }
+  if (!accessToken) { showToast('Not connected to TikTok.', 'error'); return; }
+  const data = getFormData();
+  await uploadVideo(selectedFile, data);
+  resetForm();
+}
+
+async function postQueue() {
+  if (!accessToken) { showToast('Not connected to TikTok.', 'error'); return; }
+  const pending = queue.filter(i => i.status === 'queued');
+  for (const item of pending) {
+    const file = window._fileMap?.[item.id];
+    if (!file) {
+      updateQueueStatus(item.id, 'failed');
+      showToast(`File missing for "${item.fileName}" — please re-add it.`, 'error');
+      continue;
+    }
+    await uploadVideo(file, item, item.id);
+  }
+}
+
+async function uploadVideo(file, data, queueId = null) {
+  if (queueId) updateQueueStatus(queueId, 'uploading');
+
+  try {
+    // Step 1: Init upload
+    showToast(`Initializing upload for "${file.name}"…`, 'success');
+    const videoSize = file.size;
+
+    const initResp = await fetch('https://open.tiktokapis.com/v2/post/publish/video/init/', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json; charset=UTF-8',
+      },
+      body: JSON.stringify({
+        post_info: {
+          title: data.caption || ' ',
+          privacy_level: data.privacy,
+          disable_duet: data.disableDuet,
+          disable_stitch: data.disableStitch,
+          disable_comment: data.disableComment,
+        },
+        source_info: {
+          source: 'FILE_UPLOAD',
+          video_size: videoSize,
+          chunk_size: videoSize,
+          total_chunk_count: 1,
+        }
+      })
+    });
+
+    const initData = await initResp.json();
+
+    if (initData.error?.code !== 'ok') {
+      throw new Error(initData.error?.message || 'Init failed');
+    }
+
+    const { publish_id, upload_url } = initData.data;
+
+    // Step 2: Upload video binary
+    showToast(`Uploading video… this may take a moment.`, 'success');
+    if (queueId) setProgress(queueId, 30);
+
+    const uploadResp = await fetch(upload_url, {
+      method: 'PUT',
+      headers: {
+        'Content-Range': `bytes 0-${videoSize - 1}/${videoSize}`,
+        'Content-Type': 'video/mp4',
+      },
+      body: file,
+    });
+
+    if (!uploadResp.ok) throw new Error(`Upload failed: ${uploadResp.status}`);
+    if (queueId) setProgress(queueId, 70);
+
+    // Step 3: Poll for status
+    showToast(`Processing video…`, 'success');
+    let posted = false;
+    for (let i = 0; i < 20; i++) {
+      await sleep(3000);
+      const statusResp = await fetch('https://open.tiktokapis.com/v2/post/publish/status/fetch/', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+        body: JSON.stringify({ publish_id })
+      });
+      const statusData = await statusResp.json();
+      const status = statusData.data?.status;
+
+      if (status === 'PUBLISH_COMPLETE') {
+        posted = true;
+        break;
+      } else if (status === 'FAILED') {
+        throw new Error('TikTok reported upload failed');
+      }
+      if (queueId) setProgress(queueId, 70 + i * 1.5);
+    }
+
+    if (posted) {
+      if (queueId) { setProgress(queueId, 100); updateQueueStatus(queueId, 'posted'); }
+      showToast(`✅ "${file.name}" posted successfully!`, 'success');
+    } else {
+      throw new Error('Timed out waiting for TikTok to process the video');
+    }
+
+  } catch (err) {
+    console.error(err);
+    if (queueId) updateQueueStatus(queueId, 'failed');
+    showToast(`❌ ${err.message}`, 'error');
+  }
+}
+
+function updateQueueStatus(id, status) {
+  const item = queue.find(i => i.id === id);
+  if (item) { item.status = status; saveQueue(); renderQueue(); }
+}
+
+function setProgress(id, pct) {
+  const pb = document.getElementById(`pb-${id}`);
+  const pf = document.getElementById(`pf-${id}`);
+  if (pb && pf) { pb.style.display = 'block'; pf.style.width = pct + '%'; }
+}
+
+// ── UTILS ──────────────────────────────────────────────────────────────────
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+function showToast(msg, type = 'success') {
+  const c = document.getElementById('toast-container');
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
+  t.textContent = msg;
+  c.appendChild(t);
+  setTimeout(() => t.remove(), 4000);
+}
+</script>
+</body>
+</html>
