@@ -463,8 +463,6 @@
           <div class="field">
             <label>Privacy</label>
             <select id="privacy">
-              <option value="PUBLIC_TO_EVERYONE">Public</option>
-              <option value="MUTUAL_FOLLOW_FRIENDS">Friends</option>
               <option value="SELF_ONLY">Private</option>
             </select>
           </div>
@@ -586,7 +584,7 @@ function disconnect() {
 }
 
 // Call this after you have the access token (from callback page)
-function showMain() {
+async function showMain() {
   document.getElementById('auth-section').style.display = 'none';
   document.getElementById('main-section').style.display = 'block';
   setStatus('connected (sandbox)', true);
@@ -595,6 +593,36 @@ function showMain() {
     document.getElementById('user-name').textContent = userInfo.display_name || 'TikTok User';
     document.getElementById('user-handle').textContent = userInfo.username ? `@${userInfo.username}` : '';
     if (userInfo.avatar_url) document.getElementById('user-avatar').src = userInfo.avatar_url;
+  }
+
+  // Fetch creator info to get valid privacy options
+  try {
+    const resp = await fetch(`${WORKER_URL}/creator_info`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ access_token: accessToken }),
+    });
+    const data = await resp.json();
+    if (data.privacy_level_options) {
+      const select = document.getElementById('privacy');
+      const labels = {
+        PUBLIC_TO_EVERYONE: 'Public',
+        MUTUAL_FOLLOW_FRIENDS: 'Friends',
+        FOLLOWER_OF_CREATOR: 'Followers',
+        SELF_ONLY: 'Private',
+      };
+      select.innerHTML = data.privacy_level_options
+        .map(v => `<option value="${v}">${labels[v] || v}</option>`)
+        .join('');
+      // Default to SELF_ONLY if available (required for unaudited apps)
+      if (data.privacy_level_options.includes('SELF_ONLY')) {
+        select.value = 'SELF_ONLY';
+      }
+    }
+    // Store duet/stitch/comment caps
+    window.creatorInfo = data;
+  } catch (err) {
+    console.warn('Could not fetch creator info:', err);
   }
 }
 
