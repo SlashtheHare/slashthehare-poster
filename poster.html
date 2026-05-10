@@ -515,10 +515,9 @@
 
 <script>
 // ── CONFIG ──────────────────────────────────────────────────────────────
-const CLIENT_KEY = 'sbawrm2ufvfsey5ys8';
-const REDIRECT_URI = 'https://slashthehare.github.io/slashthehare-poster/poster.html';
-const SCOPES = 'user.info.basic,video.upload';
-const WORKER_URL = 'https://tiktokposter.rudacpbaptista.workers.dev'; // ← replace after deploying
+const CLIENT_KEY = 'aworrq4up714anek';
+const REDIRECT_URI = 'https://slashthehare.github.io/slashthehare-poster/callback.html';
+const SCOPES = 'user.info.basic,video.upload,video.publish';
 
 // ── STATE ────────────────────────────────────────────────────────────────
 let accessToken = localStorage.getItem('tt_access_token');
@@ -527,33 +526,16 @@ let queue = JSON.parse(localStorage.getItem('tt_queue') || '[]');
 let selectedFile = null;
 
 // ── INIT ─────────────────────────────────────────────────────────────────
-window.addEventListener('load', async () => {
+window.addEventListener('load', () => {
+  // Check for OAuth callback params in URL
   const params = new URLSearchParams(window.location.search);
   const code = params.get('code');
-
   if (code) {
+    // Clean URL
     window.history.replaceState({}, '', window.location.pathname);
-    showToast('Connecting to TikTok…', 'success');
-    try {
-      const resp = await fetch(`${WORKER_URL}/exchange`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code }),
-      });
-      const data = await resp.json();
-      if (data.error) throw new Error(data.description || data.error);
-      accessToken = data.access_token;
-      localStorage.setItem('tt_access_token', accessToken);
-      showToast('✅ Connected to TikTok!', 'success');
-      showMain();
-    } catch (err) {
-      showToast(`❌ Auth failed: ${err.message}`, 'error');
-      document.getElementById('auth-section').style.display = 'block';
-      document.getElementById('main-section').style.display = 'none';
-    }
-    setupDropZone();
-    renderQueue();
-    return;
+    showToast('⚠ OAuth code received — server-side exchange needed. See console.', 'error');
+    console.log('Auth code:', code);
+    console.log('Exchange this code server-side for an access_token using your Client Secret.');
   }
 
   if (accessToken) {
@@ -757,42 +739,30 @@ async function uploadVideo(file, data, queueId = null) {
   if (queueId) updateQueueStatus(queueId, 'uploading');
 
   try {
-    // Step 1: Init upload
+    // Step 1: Init upload via worker
     showToast(`Initializing upload for "${file.name}"…`, 'success');
     const videoSize = file.size;
 
-    const initResp = await fetch('https://open.tiktokapis.com/v2/post/publish/video/init/', {
+    const initResp = await fetch(`${WORKER_URL}/init`, {
       method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json; charset=UTF-8',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        post_info: {
-          title: data.caption || ' ',
-          privacy_level: data.privacy,
-          disable_duet: data.disableDuet,
-          disable_stitch: data.disableStitch,
-          disable_comment: data.disableComment,
-        },
-        source_info: {
-          source: 'FILE_UPLOAD',
-          video_size: videoSize,
-          chunk_size: videoSize,
-          total_chunk_count: 1,
-        }
+        access_token: accessToken,
+        caption: data.caption || ' ',
+        privacy: data.privacy,
+        disable_duet: data.disableDuet,
+        disable_stitch: data.disableStitch,
+        disable_comment: data.disableComment,
+        video_size: videoSize,
       })
     });
 
     const initData = await initResp.json();
+    if (initData.error) throw new Error(initData.description || initData.error);
 
-    if (initData.error?.code !== 'ok') {
-      throw new Error(initData.error?.message || 'Init failed');
-    }
+    const { publish_id, upload_url } = initData;
 
-    const { publish_id, upload_url } = initData.data;
-
-    // Step 2: Upload video binary
+    // Step 2: Upload video binary directly to TikTok CDN (no CORS issue)
     showToast(`Uploading video… this may take a moment.`, 'success');
     if (queueId) setProgress(queueId, 30);
 
@@ -808,21 +778,19 @@ async function uploadVideo(file, data, queueId = null) {
     if (!uploadResp.ok) throw new Error(`Upload failed: ${uploadResp.status}`);
     if (queueId) setProgress(queueId, 70);
 
-    // Step 3: Poll for status
+    // Step 3: Poll for status via worker
     showToast(`Processing video…`, 'success');
     let posted = false;
     for (let i = 0; i < 20; i++) {
       await sleep(3000);
-      const statusResp = await fetch('https://open.tiktokapis.com/v2/post/publish/status/fetch/', {
+      const statusResp = await fetch(`${WORKER_URL}/status`, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json; charset=UTF-8',
-        },
-        body: JSON.stringify({ publish_id })
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ access_token: accessToken, publish_id })
       });
       const statusData = await statusResp.json();
-      const status = statusData.data?.status;
+      if (statusData.error) throw new Error(statusData.description || statusData.error);
+      const status = statusData.status;
 
       if (status === 'PUBLISH_COMPLETE') {
         posted = true;
